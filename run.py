@@ -1,4 +1,9 @@
-
+'''
+Functionality:
+Makes a pool play bracket or team schedule
+'''
+import abc
+from abc import ABCMeta
 
 #the definition of a single team
 class Team:
@@ -16,18 +21,27 @@ class Team:
             return True
         return False
 
+    #returns the team's ID
     def getID(self):
         return self.__ID
 
+    #returns the number of games a team has played
     def getGames(self):
         return self.__games
 
+    #adds a game to the team's schedule
+    #user: the team being added
+    #opp: the oppoenent team being added
     def addGame(self,user,opp):
         self.__games +=1
         self.__schedule.append((user.getID(),opp.getID()))
 
+    #prints out the schedule for a team
     def printSchedule(self):
         print self.__schedule
+
+    def getSchedule(self):
+        return self.__schedule
 
 #a singlar games information
 class Game:
@@ -134,7 +148,7 @@ class Pool:
                     if(self.__teamList[opp].getGames() < self.__maxGames):
                         self.addGame(i,opp)
 
-                #moving up the opponent
+                #moving up the opponent if something else is wrong
                 opp = (opp+1)%self.__teams
                 if(opp == i):
                     break
@@ -147,6 +161,11 @@ class Pool:
             print "Team ",self.__teamList[i].getID()," ",
             self.__teamList[i].printSchedule()
 
+    #prints out a single team schedule
+    #teamNo: the team number being printed
+    def printTeamSchedule(self,teamNo):
+        print "Team ",self.__teamList[teamNo].getID()," ",
+        self.__teamList[teamNo].printSchedule()
 
     #gets the teams from the schedule
     def getTeams(self):
@@ -156,11 +175,21 @@ class Pool:
     def getTeamCount(self):
         return self.__teams
 
+    #returns a full schdule of the whole tournament inside of a list of tuples
+    def allGames(self):
+        fullSchedule = []
+        for team in self.__teamList:
+            for game in team.getSchedule():
+                if((game[1],game[0]) not in fullSchedule):
+                    fullSchedule.append(game)
+        return fullSchedule
+
+
 #creates seperate pools to form a pool play tournament
 class Bracket:
 
     def __init__(self):
-        self.poolBracket = {}
+        self.poolBracket = []
         self.__teams = 0
         self.__games = 0
         self.__pools = 0
@@ -175,11 +204,13 @@ class Bracket:
         self.__pools = pools
         self.__insertPools()
 
+
+
     #displays each pool with their respected games
     def printPools(self):
         for i in range(self.__pools):
             print "Pools ", i+1
-            self.poolBracket[i+1].printAllSchedules()
+            self.poolBracket[i].printAllSchedules()
 
     #inserts the pools into the dictionary
     def __insertPools(self):
@@ -188,8 +219,17 @@ class Bracket:
         for i in range(self.__pools):
             tmpPool = Pool()
             tmpPool.createSchedule(self.__games,interval[i],teamCount)
-            self.poolBracket[i+1] = tmpPool
+            self.poolBracket.append(tmpPool)
             teamCount += interval[i]
+
+    #returns the complete schedule of the tournament without games being duplicated
+    def getFullPoolSchedule(self):
+        fullTournamentSchedule = []
+        for pool in self.poolBracket:
+            data = pool.allGames()
+            for game in data:
+                fullTournamentSchedule.append(game)
+        return fullTournamentSchedule
 
     #cretes the amount of teams that is going to be in each pool
     #returns a lst full of numbers, which are teams in each pool.
@@ -221,10 +261,71 @@ class Bracket:
         else:
             return self.__getTeamLst(div+1)
 
+#This class is made in order to format and change the Bracket class to specifications
+class Format:
+    __metaclass__ = ABCMeta
+    def __init__(self):
+        pass
+
+    @abc.abstractmethod
+    def __printSchedule__(self):
+        pass
+
+    @abc.abstractmethod
+    def __tournamentSchedule__(self):
+        pass
+
+    @abc.abstractmethod
+    def __changeTeamName__(self,teamID,teamName):
+        pass
+
+    @abc.abstractmethod
+    def __fileOutput__(self):
+        pass
+
+#subclass of Format
+#This version can print out a whole schdule
+class FormatBracket(Format):
+    def __init__(self,bracket):
+        self.poolsBracket = bracket
+
+    def __printSchedule__(self):
+        pass
+
+    def __tournamentSchedule__(self):
+        return self.poolsBracket.getFullPoolSchedule()
+
+    def __changeTeamName__(self,teamID,teamName):
+        pass
+
+    def __fileOutput__(self):
+        pass
+
+    def makePoolsBracket(self):
+        tournamentS = self.__tournamentSchedule__()
+
+        for i in range(len(tournamentS)):
+            if(i % 3 == 2):
+                print tournamentS[i][0]," vs ", tournamentS[i][1]
+            else:
+                print tournamentS[i][0]," vs ", tournamentS[i][1],
+        print "Outputted to text file"
+        #bracket.printPools()
+
 if(__name__ == "__main__"):
 
+
+
     B = Bracket()
-    B.makeBracket(3,18,4)
+    F = Pool()
+    F.createSchedule(2,8,2)
+    F.allGames()
+
+    #B.makeBracket(3,18,4)
     B.printPools()
+    B.makeBracket(3,18,4)
+    FB = FormatBracket(B)
+
+    FB.makePoolsBracket()
     #B.createPools(7,16,3)
     #B.printBrackets()
