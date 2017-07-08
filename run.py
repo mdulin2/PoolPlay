@@ -15,7 +15,12 @@ class Team:
 
     #true if the game is in the schedule
     #false otherwise
-    def hasGame(self,user,opp):
+    def hasGame(self,opp):
+        for game in self.__schedule:
+            if(game.getOpp() == opp.getID()):
+                return True
+        return False
+
         if((user.getID(),opp.getID()) in self.__schedule
          or (opp.getID(),user.getID()) in self.__schedule):
             return True
@@ -29,30 +34,35 @@ class Team:
     def getGames(self):
         return self.__games
 
+
+
     #adds a game to the team's schedule
     #user: the team being added
     #opp: the oppoenent team being added
-    def addGame(self,user,opp):
+    def addGame(self,game,opp):
         self.__games +=1
-        self.__schedule.append((user.getID(),opp.getID()))
+        newGame = Game(self.__ID,opp.getID())
+        self.__schedule.append(newGame)
 
     #prints out the schedule for a team
     def printSchedule(self):
-        print self.__schedule
+        for game in self.__schedule:
+            game.printGame()
+        print
 
     def getSchedule(self):
         return self.__schedule
 
 #a singlar games information
 class Game:
-    def __init__(self,gameNumber):
-        self.__gameID = gameNumber
-        self.__user = 0
-        self.__opponent = 0
+    def __init__(self,user,opponent):
+        self.__gameID = 0
+        self.__user = user
+        self.__opponent = opponent
 
     #returns who the user of the game is
     def getUser(self):
-        return self.user
+        return self.__user
 
     #returns who the opponent of the game is
     def getOpp(self):
@@ -70,6 +80,8 @@ class Game:
     def setOpp(self,opp):
         self.__opponent = opp
 
+    def printGame(self):
+        print "| ",self.__user, " vs ",self.__opponent, " | ",
 
 #the class that makes the schedule
 class Pool:
@@ -114,8 +126,7 @@ class Pool:
             #make sure that i doesn't have too many games
             while(self.__teamList[i].getGames() < self.__maxGames-1):
                 #testing if the game is doable
-                if(self.__teamList[i].hasGame(self.__teamList[i],
-                self.__teamList[opp]) == False and i != opp):
+                if(self.__teamList[i].hasGame(self.__teamList[opp]) == False and i != opp):
                     #testing if the opponent has too many games
                     if(self.__teamList[opp].getGames() < self.__maxGames+1):
                         self.addGame(i,opp)
@@ -142,8 +153,7 @@ class Pool:
             #make sure that i doesn't have too many games
             while(self.__teamList[i].getGames() < self.__maxGames):
                 #testing if the game is doable
-                if(self.__teamList[i].hasGame(self.__teamList[i],
-                self.__teamList[opp]) == False and i != opp):
+                if(self.__teamList[i].hasGame(self.__teamList[opp]) == False and i != opp):
                     #testing if the opponent has too many games
                     if(self.__teamList[opp].getGames() < self.__maxGames):
                         self.addGame(i,opp)
@@ -168,21 +178,29 @@ class Pool:
         self.__teamList[teamNo].printSchedule()
 
     #gets the teams from the schedule
-    def getTeams(self):
-        return self.__teamList
+    def getTeam(self,num):
+        return self.__teamList[num]
 
     #returns the number of teams in the pool
     def getTeamCount(self):
         return self.__teams
+
 
     #returns a full schdule of the whole tournament inside of a list of tuples
     def allGames(self):
         fullSchedule = []
         for team in self.__teamList:
             for game in team.getSchedule():
-                if((game[1],game[0]) not in fullSchedule):
+                if(self.inSchedule(game,fullSchedule)== True):
                     fullSchedule.append(game)
+
         return fullSchedule
+
+    def inSchedule(self,game,schedule):
+        for item in schedule:
+            if(item.getUser() == game.getOpp() and item.getOpp() == game.getUser()):
+                return False
+        return True
 
 
 #creates seperate pools to form a pool play tournament
@@ -194,6 +212,11 @@ class Bracket:
         self.__games = 0
         self.__pools = 0
 
+    #returns a particular pool
+    #poolNo: pool being selected
+    def getPool(self,poolNo):
+        return self.poolBracket[poolNo]
+
     #creates the full amount of pool play brackets
     #games: amount of games to be played per team, minimum
     #teams: the amount of teams in the tournament
@@ -204,7 +227,18 @@ class Bracket:
         self.__pools = pools
         self.__insertPools()
 
+    #returns the number of teams in the bracket
+    def getTeamCount(self):
+        return self.__teams
 
+    def getPoolCount(self):
+        return self.__pools
+
+    def getTeamCount(self):
+        return self.__teams
+
+    def getGameCount(self):
+        return self.__games
 
     #displays each pool with their respected games
     def printPools(self):
@@ -267,18 +301,22 @@ class Format:
     def __init__(self):
         pass
 
+    #display the tournament schedule of the bracket
     @abc.abstractmethod
-    def __printSchedule__(self):
+    def printSchedule(self):
         pass
 
+    #gets the tournament schedule
     @abc.abstractmethod
     def __tournamentSchedule__(self):
         pass
 
+    #changes the team names of the specified bracket
     @abc.abstractmethod
     def __changeTeamName__(self,teamID,teamName):
         pass
 
+    #outputs the information to a text file
     @abc.abstractmethod
     def __fileOutput__(self):
         pass
@@ -288,44 +326,84 @@ class Format:
 class FormatBracket(Format):
     def __init__(self,bracket):
         self.poolsBracket = bracket
+        self.tournamentBracket = self.poolsBracket.getFullPoolSchedule()
+        self.nameLookup = {}
+        self.__makeNameLookup()
 
-    def __printSchedule__(self):
-        pass
+    def __makeNameLookup(self):
+        for i in range(self.poolsBracket.getTeamCount()):
+            self.nameLookup[i+1] = i+1
 
     def __tournamentSchedule__(self):
-        return self.poolsBracket.getFullPoolSchedule()
+        return self.tournamentBracket
 
+   #prints a bracket with all games only once
+    def printSchedule(self,typeP):
+        if(typeP == "A"):
+            for i in range(len(self.tournamentBracket)):
+                if(i % 3 == 2):
+                    print "|",
+                    print self.nameLookup[self.tournamentBracket[i].getUser()]," vs ",
+                    print self.nameLookup[self.tournamentBracket[i].getOpp()],
+                    print "|"
+                else:
+                    print "|",
+                    print self.nameLookup[self.tournamentBracket[i].getUser()]," vs ",
+                    print self.nameLookup[self.tournamentBracket[i].getOpp()],
+                    print "|",
+        else:
+            runnningTeamCount = 1
+            for pool in range(self.poolsBracket.getPoolCount()):
+                myPool = self.poolsBracket.getPool(pool)
+                for team in range(myPool.getTeamCount()):
+                    print "Team:",self.nameLookup[runnningTeamCount], " "
+                    myTeam = myPool.getTeam(team)
+                    schedule = myTeam.getSchedule()
+                    for game in range(len(schedule)):
+                        print " | ",self.nameLookup[schedule[game].getUser()], "vs",
+                        print self.nameLookup[schedule[game].getOpp()],
+                    runnningTeamCount +=1
+                    print " |"
+
+
+    #changes the name of the team specified
+    #teamID: the current number of the team
+    #teamName: the name that the number is getting changed too
     def __changeTeamName__(self,teamID,teamName):
-        pass
+        if(teamID in self.nameLookup):
+            self.nameLookup[teamID] = teamName
+            return
+
+        for team in self.nameLookup:
+            if(self.nameLookup[team] == teamID):
+                self.nameLookup[team] = teamName
+                return
+        print "Team trying to be replaced is not valid"
+
 
     def __fileOutput__(self):
         pass
 
-    def makePoolsBracket(self):
-        tournamentS = self.__tournamentSchedule__()
+#the user interface of the software
+class User:
+    def __init__(self):
+        pass
 
-        for i in range(len(tournamentS)):
-            if(i % 3 == 2):
-                print tournamentS[i][0]," vs ", tournamentS[i][1]
-            else:
-                print tournamentS[i][0]," vs ", tournamentS[i][1],
-        print "Outputted to text file"
-        #bracket.printPools()
+    def beginning(self):
+        into = input("Options:\n"
+        "1. Make Bracket")
+    def useBracket(self):
+        gamesNum = input("Number of games per team to play.")
+        teamsNum = input("Number of teams in the tournament.")
+        poolsNum = input("Number of pools in the tourament.")
+
 
 if(__name__ == "__main__"):
 
-
-
     B = Bracket()
     F = Pool()
-    F.createSchedule(2,8,2)
-    F.allGames()
-
-    #B.makeBracket(3,18,4)
-    B.printPools()
-    B.makeBracket(3,18,4)
+    B.makeBracket(5,16,2)
     FB = FormatBracket(B)
-
-    FB.makePoolsBracket()
-    #B.createPools(7,16,3)
-    #B.printBrackets()
+    FB.__changeTeamName__(1,"drew")
+    FB.__changeTeamName__(16,"Max")
+    FB.printSchedule("s")
