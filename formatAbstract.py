@@ -24,5 +24,5 @@ class FormatAbstract:
 
     #outputs the information to a text file
     @abc.abstractmethod
-    def __fileOutput__(self):
+    def fileOutput(self):
         pass

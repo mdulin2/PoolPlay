@@ -1,4 +1,5 @@
 from formatAbstract import FormatAbstract
+import xlwt
 #subclass of Format
 #This version can print out a whole schdule
 class FormatBracket(FormatAbstract):
@@ -56,6 +57,33 @@ class FormatBracket(FormatAbstract):
                 return
         print "Team trying to be replaced is not valid"
 
-
-    def __fileOutput__(self):
+    def excelScheduleOutput(self):
         pass
+
+    def fileOutput(self):
+        outputText = ""
+        text_file = open("output.txt","w")
+        for i in range(len(self.tournamentBracket)):
+            if(i % 5 == 4):
+                outputText = str(self.nameLookup[self.tournamentBracket[i].getUser()])
+                #outputText += str(self.nameLookup[self.tournamentBracket[i].getUser()])
+                outputText += " vs "
+                outputText += str(self.nameLookup[self.tournamentBracket[i].getOpp()])
+                outputText += '\n'
+            else:
+
+                outputText = str(self.nameLookup[self.tournamentBracket[i].getUser()])
+                #outputText += str(self.nameLookup[self.tournamentBracket[i].getUser()])
+                outputText += " vs "
+                outputText += str(self.nameLookup[self.tournamentBracket[i].getOpp()])
+                outputText += '\t'
+                """
+                print "|",
+                print self.nameLookup[self.tournamentBracket[i].getUser()]," vs ",
+                print self.nameLookup[self.tournamentBracket[i].getOpp()],
+                print "|",
+                """
+            print outputText
+            text_file.write(outputText)
+
+        text_file.close()

@@ -18,13 +18,14 @@ class User:
     #the user interface for the user
     def beginning(self):
         into = 0
-        while(into != 5):
+        while(into != 6):
             into = input("Options:\n"
             "1. Make New Bracket:\n"
             "2. Print Team Schedules:\n"
             "3. Print Tourament Schedule:\n"
             "4. Change a Team Name: \n"
-            "5. End the Session\n")
+            "5. Output to a file: \n"
+            "6. End the Session\n")
 
             if(into == 1):
                 self.useBracket()
@@ -34,14 +35,8 @@ class User:
                 self.printSchedules(into)
             elif(into == 4):
                 self.changeTeamName()
-
-
-
-    #gets the data structures ready for output
-    def output(self,fileType):
-        if(fileType == "excel"):
-            #add tabs to it
-            pass
+            elif(into == 5):
+                self.outputToFile()
 
 
     #making a formatting bracket
@@ -76,6 +71,11 @@ class User:
         elif(printType == 3):
             print "Pool Play for each Team:"
             self.formattedBracket.printSchedule("s")
+        self.outputToFile()
+
+    #outputs the formatted table to a file
+    def outputToFile(self):
+        self.formattedBracket.fileOutput()
 
 if(__name__ == "__main__"):
     U = User()
